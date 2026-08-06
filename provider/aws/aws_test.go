@@ -348,6 +348,22 @@ func TestAWSZones(t *testing.T) {
 	}
 }
 
+func TestHostedZoneType(t *testing.T) {
+	for _, tc := range []struct {
+		msg      string
+		zone     route53types.HostedZone
+		expected string
+	}{
+		{"no config", route53types.HostedZone{}, "public"},
+		{"public config", route53types.HostedZone{Config: &route53types.HostedZoneConfig{PrivateZone: false}}, "public"},
+		{"private config", route53types.HostedZone{Config: &route53types.HostedZoneConfig{PrivateZone: true}}, "private"},
+	} {
+		t.Run(tc.msg, func(t *testing.T) {
+			assert.Equal(t, tc.expected, hostedZoneType(tc.zone))
+		})
+	}
+}
+
 func TestAWSZonesWithTagFilterError(t *testing.T) {
 	client := NewRoute53APIStub(t)
 	provider := &AWSProvider{

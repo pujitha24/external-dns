@@ -425,7 +425,7 @@ func (p *AWSProvider) zones(ctx context.Context) (map[string]*profiledZone, erro
 					continue
 				}
 
-				if !p.zoneTypeFilter.Match(zone) {
+				if !p.zoneTypeFilter.Match(hostedZoneType(zone)) {
 					continue
 				}
 
@@ -466,6 +466,16 @@ func (p *AWSProvider) zones(ctx context.Context) (map[string]*profiledZone, erro
 
 	p.zonesCache.Reset(zones)
 	return zones, nil
+}
+
+// hostedZoneType returns "public" or "private" for the given hosted zone, so that it can be
+// matched against a provider.ZoneTypeFilter. A zone with no config is assumed to be public since
+// the config's field `PrivateZone` is false by default in go.
+func hostedZoneType(zone route53types.HostedZone) string {
+	if zone.Config != nil && zone.Config.PrivateZone {
+		return "private"
+	}
+	return "public"
 }
 
 // wildcardUnescape converts \\052.abc back to *.abc
