@@ -266,6 +266,12 @@ OuterLoop:
 		case dns.TypePTR:
 			rrValues = []string{rr.(*dns.PTR).Ptr}
 			rrType = "PTR"
+		case dns.TypeMX:
+			// Normalized here because targets merged into an existing endpoint
+			// below bypass NewEndpointWithTTL's cleanup.
+			mx := rr.(*dns.MX)
+			rrValues = []string{endpoint.NormalizeMXTarget(fmt.Sprintf("%d %s", mx.Preference, mx.Mx))}
+			rrType = endpoint.RecordTypeMX
 		default:
 			continue // Unhandled record type
 		}

@@ -322,6 +322,33 @@ func TestRfc2136GetRecordsMultipleTargets(t *testing.T) {
 	assert.Empty(t, recs[0].ProviderSpecific, "expected no provider specific config")
 }
 
+// MX records written by the provider must be readable back through AXFR so
+// they can later be updated or deleted.
+func TestRfc2136GetRecordsMX(t *testing.T) {
+	stub := newStub()
+	err := stub.setOutput([]string{
+		"mail.foo.com 3600 IN MX 10 mx1.foo.com.",
+		"mail.foo.com 3600 IN MX 20 mx2.foo.com.",
+		"nomail.foo.com 3600 IN MX 0 .",
+	})
+	require.NoError(t, err)
+
+	provider, err := createRfc2136StubProvider(stub)
+	require.NoError(t, err)
+
+	recs, err := provider.Records(t.Context())
+	require.NoError(t, err)
+
+	require.Len(t, recs, 2)
+	assert.Equal(t, "mail.foo.com", recs[0].DNSName)
+	assert.Equal(t, endpoint.RecordTypeMX, recs[0].RecordType)
+	assert.Equal(t, endpoint.TTL(3600), recs[0].RecordTTL)
+	assert.ElementsMatch(t, []string{"10 mx1.foo.com", "20 mx2.foo.com"}, []string(recs[0].Targets))
+	// Null MX (RFC 7505) keeps its root target.
+	assert.Equal(t, "nomail.foo.com", recs[1].DNSName)
+	assert.Equal(t, []string{"0 ."}, []string(recs[1].Targets))
+}
+
 func TestRfc2136PTRCreation(t *testing.T) {
 	stub := newStub()
 	p, err := createRfc2136StubProviderWithReverseZone(stub)
