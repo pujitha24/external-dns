@@ -197,7 +197,6 @@ func newGatewayRouteSource(
 			informers.TransformRemoveLastAppliedConfig(),
 		))
 		informers.MustAddIndexers(lsInformer.Informer(), informers.IndexerWithOptions[*v1.ListenerSet](
-			informers.IndexSelectorWithAnnotationFilter(rtAnnotations),
 			informers.IndexSelectorWithConditions(annotations.IsControllerMatch[*v1.ListenerSet]),
 		))
 	}
