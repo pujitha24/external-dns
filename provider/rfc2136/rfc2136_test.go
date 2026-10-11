@@ -1597,3 +1597,26 @@ func TestRFC2136ShouldSignAXFR(t *testing.T) {
 		})
 	}
 }
+
+func TestRrTargetForTXT(t *testing.T) {
+	tests := []struct {
+		name   string
+		target string
+		want   string
+	}{
+		{"with spaces", "v=DMARC1; p=none; fo=1", `"v=DMARC1; p=none; fo=1"`},
+		{"already quoted", `"heritage=external-dns,external-dns/owner=x"`, `"heritage=external-dns,external-dns/owner=x"`},
+		{"embedded quote", `a "b" c`, `"a \"b\" c"`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := rrTargetFor("TXT", tt.target)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+
+			rr, err := dns.NewRR("a.example.org. 300 TXT " + got)
+			require.NoError(t, err)
+			assert.Len(t, rr.(*dns.TXT).Txt, 1)
+		})
+	}
+}
